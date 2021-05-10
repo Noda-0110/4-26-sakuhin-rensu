@@ -37,29 +37,11 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	SetAlwaysRunFlag(TRUE);					//ウィンドウをずっとアクティブにする
 
 														
-														//ＤＸライブラリ初期化処理-が帰ってきたら強制終了
-	if (DxLib_Init() == -1)		
+	if (DxLib_Init() == -1)		//ＤＸライブラリ初期化処理　-1が帰ってきたら強制終了
 	{
 	// エラーが起きたら直ちに終了
 		return -1;			
 	}
-
-	//四角の位置を決める
-	int X = GAME_WIDTH / 2;		//画面幅の中心
-	int Y = GAME_HEIGHT / 2;
-	//四角の大きさを決める
-	int width = 32;		//幅
-	int height = 32;	//高さ
-
-
-	//円の半径
-	int radius = 100;
-
-
-	//移動するスピード
-	int speed = 1;
-	int wspeed = speed;
-	int hspeed = speed;
 
 	//ダブルバッファリングを有効
 	SetDrawScreen(DX_SCREEN_BACK);
@@ -68,69 +50,15 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	//無限ループ　受け取り続ける
 	while (1)
 	{
-		//何かしらのキーが押されたとき
-		if (CheckHitKeyAll() != 0)
-		{
-			break;	//無限ループを抜ける
-		}
 
-		//メッセージを受け取り続ける（本体）
-		if (ProcessMessage() != 0) //-1のときに、エラーウやウィンドウが閉じられた
-		{
-			break;	//無限ループを抜ける
-		}
-
-		//画面を消去する
-		if (ClearDrawScreen() != 0) { break; }
-
-		//四角を描画する
-		//DrawBox(
-		//	X, Y, X + width, Y + height,
-		//	GetColor(255, 0, 0),	//色を取得
-		//	TRUE					//取得した色で塗りつぶすか？
-		//);
-
-		//円を描画
-		DrawCircle(X, Y, radius,
-			GetColor(0, 255, 0),
-			FALSE, 5
-		);
-
-		//四角を動かす
-		X += wspeed;		//右に動かす
-
-		//四角を斜め右下へ
-		Y += hspeed;
-
-		//四角を画面の端に来た時に、向きを反転させる
-		if (X - radius < 0 || X+radius > GAME_WIDTH)	//Xが０以下、１２８０以上になった横の時
-		{
-			//移動向き(符号)を反転
-			wspeed = -wspeed;	//1→-1　ーにして渡す -1→1　＋にして渡す
-
-			//壁に当たると加速
-			if (wspeed > 0) { wspeed += 2; }
-			else if (wspeed < 0) { wspeed -= 2; }
-		}
-
-
-
-		if (Y - radius < 0 || Y + radius > GAME_HEIGHT)	//Xが０以下、720以上になった横の時
-		{
-			//移動向き(符号)を反転
-			hspeed = -hspeed;	//1→-1　ーにして渡す -1→1　＋にして渡す
-
-			if (hspeed > 0) { hspeed += 2; }
-			else if (hspeed < 0) { hspeed -= 2; }
-		}
+		if (ProcessMessage() != 0) { break; }	//メッセージを受け取り続ける
+		if (ClearDrawScreen() != 0) { break; }	//画面を消去する
 
 
 		ScreenFlip();	//ダブルバッファリングした画面を描画
 	}
 
 	
-	
-
 	// ＤＸライブラリ使用の終了処理（準備）
 	DxLib_End();				
 
