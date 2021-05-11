@@ -1,5 +1,7 @@
 //ヘッダーファイルの読み込み
-#include "DxLib.h"//DxLibを使う時に必要
+#include "DxLib.h"		//DxLibを使う時に必要
+
+#include "keyboard.h"	//キーボードの処理
 
 
 //マクロ定義
@@ -16,14 +18,14 @@
 // プログラムは WinMain から始まります
 //Windowsのプログラミング法で動いている
 //DxLibは、DirectXという、ゲームプログラミングを簡単に扱える仕組み
-int WINAPI WinMain(HINSTANCE hInstance, 
-	HINSTANCE hPrevInstance, 
-	LPSTR lpCmdLine, 
+int WINAPI WinMain(HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPSTR lpCmdLine,
 	int nCmdShow)
 {
 	//追加分
 	SetOutApplicationLogValidFlag(FALSE);	//Log.txtを出力しない
-	
+
 	ChangeWindowMode(TRUE);					//ウィンドウモードに設定
 	SetMainWindowText(GAME_TITLE);			//ウィンドウのタイトル文字
 	SetGraphMode(GAME_WIDTH, GAME_HEIGHT, GAME_COLOR);	//ウィンドウの解像度を設定
@@ -36,16 +38,23 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	SetWaitVSyncFlag(TRUE);					//ディスプレイの垂直同期を有効にする
 	SetAlwaysRunFlag(TRUE);					//ウィンドウをずっとアクティブにする
 
-														
+
 	if (DxLib_Init() == -1)		//ＤＸライブラリ初期化処理　-1が帰ってきたら強制終了
 	{
-	// エラーが起きたら直ちに終了
-		return -1;			
+		// エラーが起きたら直ちに終了
+		return -1;
 	}
 
 	//ダブルバッファリングを有効
 	SetDrawScreen(DX_SCREEN_BACK);
 
+
+	//円の中心点
+	int X = GAME_WIDTH / 2;
+	int Y = GAME_HEIGHT / 2;
+
+	//円の半径
+	int radius = 50;
 
 	//無限ループ　受け取り続ける
 	while (1)
@@ -54,13 +63,37 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		if (ProcessMessage() != 0) { break; }	//メッセージを受け取り続ける
 		if (ClearDrawScreen() != 0) { break; }	//画面を消去する
 
+		//キーボードの入力更新
+		AllKeyUpdate();
+
+		//キーを入力
+		if (KeyDown(KEY_INPUT_W) == TRUE)
+		{
+			Y--;	//上に移動
+		}
+
+		if (KeyDown(KEY_INPUT_S) == TRUE)
+		{
+			Y++;	//下に移動
+		}
+		if (KeyDown(KEY_INPUT_A) == TRUE)
+		{
+			X--;	//左に移動
+		}
+		if (KeyDown(KEY_INPUT_D) == TRUE)
+		{
+			X++;	//右に移動
+		}
+
+
+		DrawCircle(X, Y, radius, GetColor(255, 255, 0), TRUE);
 
 		ScreenFlip();	//ダブルバッファリングした画面を描画
 	}
 
-	
+
 	// ＤＸライブラリ使用の終了処理（準備）
-	DxLib_End();				
+	DxLib_End();
 
 	return 0;				// ソフトの終了（実行） 
 }
