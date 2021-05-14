@@ -8,9 +8,6 @@ KEYBOARD keyboard;
 
 //関数
 
-
-
-
 /// <summary>
 /// キーの入力状態を更新する
 /// </summary>

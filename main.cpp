@@ -15,6 +15,42 @@
 
 #define GAME_WINDOW_BAR 0	//ウインドウバーの種類
 
+
+//列挙型
+enum GAME_SCENE {
+	GAME_SCENE_TITLE,
+	GAME_SCENE_PLAY,
+	GAME_SCENE_END,
+	GAME_SCENE_CHANGE //エフェクトを出すシーン
+};//ゲームのシーン
+
+//グローバル変数
+//シーンを管理する変数
+GAME_SCENE GameScene;		//現在のゲームのシーン
+GAME_SCENE OldGameScene;	//前回もゲームのシーン
+GAME_SCENE NextGameScene;	//次のゲームのシーン
+
+//画面の切り替え
+BOOL IsFadeOut = FALSE;	//フェードアウト
+BOOL IsFadeIn = FALSE;	//フェードイン
+
+//プロトタイプ宣言
+VOID Title(VOID);		//タイトル画面
+VOID TitleProc(VOID);	//タイトル画面（処理）
+VOID TitleDraw(VOID);	//タイトル画面（描画）
+
+VOID Play(VOID);		//プレイ画面
+VOID PlayProc(VOID);	//プレイ画面（処理）
+VOID PlayDraw(VOID);	//プレイ画面（描画）
+
+VOID End(VOID);			//エンド画面
+VOID EndProc(VOID);		//エンド画面（処理）
+VOID EndDraw(VOID);		//エンド画面（描画）
+
+VOID Change(VOID);		//切り替え画面
+VOID ChangeProc(VOID);	//切り替え画面（処理）
+VOID ChangeDraw(VOID);	//切り替え画面（描画）
+
 // プログラムは WinMain から始まります
 //Windowsのプログラミング法で動いている
 //DxLibは、DirectXという、ゲームプログラミングを簡単に扱える仕組み
@@ -53,8 +89,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	int X = GAME_WIDTH / 2;
 	int Y = GAME_HEIGHT / 2;
 
+
 	//円の半径
 	int radius = 50;
+
+	//最初のシーンはタイトル画面
+	GameScene == GAME_SCENE_TITLE;
+
 
 	//無限ループ　受け取り続ける
 	while (1)
@@ -66,25 +107,55 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		//キーボードの入力更新
 		AllKeyUpdate();
 
+
+
+		//ESCキーで強制終了
+		if (KeyClick(KEY_INPUT_ESCAPE) == TRUE) { break; }
+
+
+		//以前のシーンを所得
+		if (GameScene != GAME_SCENE_CHANGE)
+		{
+			OldGameScene = GameScene;
+		}
+
+		//シーンごとに処理を行う
+		switch (GameScene)
+		{
+		case GAME_SCENE_TITLE:
+			Title();	//タイトル画面
+			break;
+		case GAME_SCENE_PLAY:
+			Play();		//プレイ画面
+			break;
+		case GAME_SCENE_END:
+			End();		//エンド画面
+			break;
+		case GAME_SCENE_CHANGE:
+			Change();	//切り替え画面
+			break;
+		default:
+			break;
+		}
+
 		//キーを入力
-		if (KeyDown(KEY_INPUT_W) == TRUE)
+		if (KeyDown(KEY_INPUT_UP) == TRUE)
 		{
 			Y--;	//上に移動
 		}
 
-		if (KeyDown(KEY_INPUT_S) == TRUE)
+		if (KeyDown(KEY_INPUT_DOWN) == TRUE)
 		{
 			Y++;	//下に移動
 		}
-		if (KeyDown(KEY_INPUT_A) == TRUE)
+		if (KeyDown(KEY_INPUT_LEFT) == TRUE)
 		{
 			X--;	//左に移動
 		}
-		if (KeyDown(KEY_INPUT_D) == TRUE)
+		if (KeyDown(KEY_INPUT_RIGHT) == TRUE)
 		{
 			X++;	//右に移動
 		}
-
 
 		DrawCircle(X, Y, radius, GetColor(255, 255, 0), TRUE);
 
@@ -96,4 +167,111 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	DxLib_End();
 
 	return 0;				// ソフトの終了（実行） 
+}
+
+
+// ------------  シーン関数　　------------ //
+/// <summary>
+/// タイトル画面
+/// </summary>
+VOID Title(VOID)
+{
+	TitleProc();	//処理
+	TitleDraw();	//描画
+
+	return;
+}
+/// <summary>
+/// タイトル画面　処理
+/// </summary>
+VOID TitleProc(VOID)
+{
+	return;
+}
+/// <summary>
+/// タイトル画面　処理 
+/// </summary>
+VOID TitleDraw(VOID)
+{
+	DrawString(0, 0, "タイトル画面", GetColor(0, 0, 0));
+	return;
+}
+
+
+/// <summary>
+/// プレイ画面
+/// </summary>
+VOID Play(VOID)
+{
+	PlayProc();
+	PlayDraw();
+	return;
+}
+/// <summary>
+/// プレイ画面　処理
+/// </summary>
+VOID PlayProc(VOID)
+{
+	return;
+}
+/// <summary>
+/// プレイ画面　描画
+/// </summary>
+VOID PlayDraw(VOID)
+
+{
+	DrawString(0, 0, "プレイ画面", GetColor(0, 0, 0));
+	return;
+}
+
+
+/// <summary>
+/// エンド画面
+/// </summary>
+VOID End(VOID)
+{
+	EndProc();
+	EndDraw();
+	return;
+}
+/// <summary>
+/// エンド画面　処理
+/// </summary>
+VOID EndProc(VOID)
+{
+	return;
+}
+/// <summary>
+/// エンド画面 描画
+/// </summary>
+VOID EndDraw(VOID)
+{
+	DrawString(0, 0, "エンド画面", GetColor(0, 0, 0));
+	return;
+}
+
+
+/// <summary>
+/// 切り替え画面
+/// </summary>
+VOID Change(VOID)
+{
+	ChangeProc();
+	ChangeDraw();
+	return;
+}
+/// <summary>
+/// 切り替え画面 処理
+/// </summary>
+VOID ChangeProc(VOID)
+{
+	return;
+}
+/// <summary>
+/// 切り替え画面　描画
+/// </summary>
+VOID ChangeDraw(VOID)
+{
+	DrawString(0, 0, "切り替え画面", GetColor(0, 0, 0));
+	return;
 }
