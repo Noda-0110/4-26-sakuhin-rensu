@@ -34,6 +34,20 @@ GAME_SCENE NextGameScene;	//次のゲームのシーン
 BOOL IsFadeOut = FALSE;	//フェードアウト
 BOOL IsFadeIn = FALSE;	//フェードイン
 
+int FadeTimeMill = 2000;					//切り替えミリ秒
+int FadeTimeMax = FadeTimeMill / 1000 * 60;	//ミリ秒をフレーム病に変換
+
+//フェードアウト
+int FadeOutCntInit = 0;				//初期値
+int FadeOutCnt = FadeOutCntInit;	//フェードアウトのカウンタ
+int FadeOutCntMax = FadeTimeMax;	//フェードアウトのカウンタMAX
+
+//フェードイン
+int FadeInCntInit = FadeTimeMax;	//初期値
+int FadeInCnt = FadeInCntInit;		//フェードインのカウンタ
+int FadeInCntMax = FadeTimeMax;				//フェードインのカウンタMAX
+
+
 //プロトタイプ宣言
 VOID Title(VOID);		//タイトル画面
 VOID TitleProc(VOID);	//タイトル画面（処理）
@@ -50,6 +64,8 @@ VOID EndDraw(VOID);		//エンド画面（描画）
 VOID Change(VOID);		//切り替え画面
 VOID ChangeProc(VOID);	//切り替え画面（処理）
 VOID ChangeDraw(VOID);	//切り替え画面（描画）
+VOID ChangeScene(VOID);
+
 
 // プログラムは WinMain から始まります
 //Windowsのプログラミング法で動いている
@@ -138,6 +154,17 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			break;
 		}
 
+		//シーンを切り替える
+		if (OldGameScene != GameScene)
+		{
+			//現在シーンが切り替え画面（タイトルプレイエンドの画面）でないとき
+			if (GameScene != GAME_SCENE_CHANGE)
+			{
+				NextGameScene = GameScene;		//次のシーンを保存
+				GameScene = GAME_SCENE_CHANGE;	//画面切り替えシーンに変える
+			}
+		}
+
 		//キーを入力
 		if (KeyDown(KEY_INPUT_UP) == TRUE)
 		{
@@ -170,7 +197,17 @@ int WINAPI WinMain(HINSTANCE hInstance,
 }
 
 
+
 // ------------  シーン関数　　------------ //
+VOID ChangeScene(GAME_SCENE scene)
+{
+	GameScene = scene;	//シーンを切り替え
+	IsFadeIn = FALSE;	//フェードインしない
+	IsFadeOut = TRUE;	//フェードアウトする
+
+	return;
+}
+
 /// <summary>
 /// タイトル画面
 /// </summary>
@@ -185,7 +222,16 @@ VOID Title(VOID)
 /// タイトル画面　処理
 /// </summary>
 VOID TitleProc(VOID)
+
 {
+	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
+	{
+		//シーン切り替え
+		//次のシーンの初期化をここで行うと楽
+		//プレイ画面に切り替え
+		ChangeScene(GAME_SCENE_PLAY);
+	}
+
 	return;
 }
 /// <summary>
@@ -212,6 +258,14 @@ VOID Play(VOID)
 /// </summary>
 VOID PlayProc(VOID)
 {
+	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
+	{
+		//シーン切り替え
+		//次のシーンの初期化をここで行うと楽
+		//エンド画面に切り替え
+		ChangeScene(GAME_SCENE_END);
+	}
+
 	return;
 }
 /// <summary>
@@ -239,6 +293,14 @@ VOID End(VOID)
 /// </summary>
 VOID EndProc(VOID)
 {
+	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
+	{
+		//シーン切り替え
+		//次のシーンの初期化をここで行うと楽
+		//タイトル画面に切り替え
+		ChangeScene(GAME_SCENE_TITLE);
+	}
+
 	return;
 }
 /// <summary>
@@ -265,13 +327,87 @@ VOID Change(VOID)
 /// </summary>
 VOID ChangeProc(VOID)
 {
+	//フェードイン
+	if (IsFadeIn == TRUE)
+	{
+		if (FadeInCnt > FadeInCntMax)
+		{
+			FadeInCnt--;	//カウンタを減らす、透明にしていく
+		}
+		else
+		{
+			//フェードイン処理の終了時 透明カウンタのMAXを超えたとき
+			FadeInCnt = FadeInCntInit;	//カウンタ初期化
+			IsFadeIn = FALSE;			//フェードイン処理の終了
+		}
+
+	}
+	//フェードアウト
+	if (IsFadeOut == TRUE)
+	{
+		if (FadeOutCnt < FadeOutCntMax)
+		{
+			FadeOutCnt++;	//カウンタを増やす、色を濃くにしていく
+		}
+		else
+		{
+			//フェードイン処理の終了時 透明カウンタのMAXを超えたとき
+			FadeOutCnt = FadeOutCntInit;	//カウンタ初期化
+			IsFadeOut = FALSE;			//フェードイン処理の終了
+		}
+
+	}
+
+	//切り替え処理終了？
+	if (IsFadeIn == FALSE && IsFadeOut == FALSE)
+	{
+		//フェードアウトもフェードインもしていない
+		GameScene = NextGameScene;	//次のシーンに切り替え
+		OldGameScene = GameScene;	//以前のシーンに更新
+	}
 	return;
 }
+
 /// <summary>
 /// 切り替え画面　描画
 /// </summary>
 VOID ChangeDraw(VOID)
 {
+	//以前のシーンを描画
+	switch (OldGameScene)
+	{
+	case GAME_SCENE_TITLE:
+		TitleDraw();	//タイトル画面の描画
+		break;
+	case GAME_SCENE_PLAY:
+		PlayDraw();		//プレイ画面の描画
+		break;
+	case GAME_SCENE_END:
+		EndDraw();		//エンド画面の描画
+		break;
+	default:
+		break;
+	}
+
+	//フェードイン
+	if (IsFadeIn == TRUE)
+	{
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((float)FadeInCnt / FadeInCntMax) * 255);	//パーセンテージ
+
+	}
+	//フェードアウト
+	if (IsFadeOut == TRUE)
+	{
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((float)FadeOutCnt / FadeOutCntMax) * 255);	//パーセンテージ
+
+	}
+
+	//四角を描画
+	DrawBox(0, 0, GAME_WIDTH, GAME_HEIGHT, GetColor(0, 0, 0), TRUE);
+
+	//半透明終了
+	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
 	DrawString(0, 0, "切り替え画面", GetColor(0, 0, 0));
 	return;
 }
