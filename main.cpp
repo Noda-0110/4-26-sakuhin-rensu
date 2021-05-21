@@ -4,11 +4,31 @@
 #include "keyboard.h"	//キーボードの処理
 #include "FPS.h"		//FPSの処理
 
+
+//構造体の定義
+//キャラクタの構造体
+struct CHARACTOR
+{
+	int handle = -1;	//画像のハンドル（管理番号）
+	char path[255];		//画像の場所（パス）
+	int x;		//X位置
+	int y;		//Y位置
+	int width;	//幅
+	int height;	//高さ
+	int speed = 1;
+
+	RECT coll;	//上下左右当たり判定の領域
+	BOOL IsDraw = FALSE;//画像が描画できるか
+};
+
 //グローバル変数
 //シーンを管理する変数
 GAME_SCENE GameScene;		//現在のゲームのシーン
 GAME_SCENE OldGameScene;	//前回もゲームのシーン
 GAME_SCENE NextGameScene;	//次のゲームのシーン
+
+//プレイヤー
+CHARACTOR player;
 
 //画面の切り替え
 BOOL IsFadeOut = FALSE;	//フェードアウト
@@ -44,6 +64,8 @@ VOID EndDraw(VOID);		//エンド画面（描画）
 VOID Change(VOID);		//切り替え画面
 VOID ChangeProc(VOID);	//切り替え画面（処理）
 VOID ChangeDraw(VOID);	//切り替え画面（描画）
+
+
 VOID ChangeScene(VOID);
 
 
@@ -83,21 +105,35 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	SetDrawScreen(DX_SCREEN_BACK);
 
 
-	//円の中心点
-	int X = GAME_WIDTH / 2;
-	int Y = GAME_HEIGHT / 2;
-	//円の半径
-	int radius = 50;
-
-	//四角の位置　大きさ
-	//int x = 0;
-	//int y = 0;
-	
-	//int WidthB = 25;
-	//int HeightB = 25;
-
 	//最初のシーンはタイトル画面
 	GameScene == GAME_SCENE_TITLE;
+
+	//ゲーム全体の初期化
+
+	//プレイヤーの画像を読み込み
+	strcpyDx(player.path, ".\\image\\Player2.png");
+	player.handle = LoadGraph(player.path);	//画像を読み込み
+	
+	//画像が読み込めなかったとき、エラー（ー１）が入る
+	if (player.handle == -1)
+	{
+		MessageBox(
+			GetMainWindowHandle(),	//メインのウィンドウハンドル
+			player.path,			//メッセージ本文
+			"画像読み込みエラー！",	//メッセージタイトル
+			MB_OK					//ボタン
+		);
+		DxLib_End();	//強制終了
+		return -1;		//エラー終了
+	}
+
+	GetGraphSize(player.handle, &player.width, &player.height);
+
+	//プレイヤーの初期化
+	player.x = GAME_WIDTH / 2 - player.width / 2;
+	player.y = GAME_HEIGHT / 2 - player.height / 2;
+	player.speed = 5;
+	player.IsDraw = TRUE;
 
 
 	//無限ループ　受け取り続ける
@@ -158,29 +194,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		}
 
 
-		
-		//キーを入力(円)
-		if (KeyDown(KEY_INPUT_UP) == TRUE)
-		{
-			Y--;	//上に移動
-		}
-
-		if (KeyDown(KEY_INPUT_DOWN) == TRUE)
-		{
-			Y++;	//下に移動
-		}
-		if (KeyDown(KEY_INPUT_LEFT) == TRUE)
-		{
-			X--;	//左に移動
-		}
-		if (KeyDown(KEY_INPUT_RIGHT) == TRUE)
-		{
-			X++;	//右に移動
-		}
-
-		DrawCircle(X, Y, radius, GetColor(255, 255, 0), TRUE);
-
-		//DrawBox(x, y, x + WidthB,y + HeightB, GetColor(0, 0, 255), TRUE);
 
 		//FPS値を描画
 		FPSDraw();
@@ -190,6 +203,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		ScreenFlip();	//ダブルバッファリングした画面を描画
 	}
 
+	//終わる時の処理
+	DeleteGraph(player.handle);	//メモリ上から画像を削除
 
 	// ＤＸライブラリ使用の終了処理（準備）
 	DxLib_End();
@@ -275,6 +290,11 @@ VOID PlayProc(VOID)
 VOID PlayDraw(VOID)
 
 {
+	//プレイヤーを描画
+	if (player.IsDraw == TRUE)
+	{
+		DrawGraph(player.x, player.y, player.handle, TRUE);
+	}
 	DrawString(0, 0, "プレイ画面", GetColor(0, 0, 0));
 	return;
 }
