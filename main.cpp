@@ -1,7 +1,7 @@
 //ヘッダーファイルの読み込み
 #include "DxLib.h"		//DxLibを使う時に必要
-
 #include "keyboard.h"	//キーボードの処理
+#include "FPS.h"		//FPSの処理
 
 
 //マクロ定義
@@ -88,6 +88,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	//追加分
 	SetWindowStyleMode(GAME_WINDOW_BAR);	//ウィンドウバーの状態
 	SetWaitVSyncFlag(TRUE);					//ディスプレイの垂直同期を有効にする
+											//高度な処理や描画を行う時にはFALSE
+
 	SetAlwaysRunFlag(TRUE);					//ウィンドウをずっとアクティブにする
 
 
@@ -104,10 +106,15 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	//円の中心点
 	int X = GAME_WIDTH / 2;
 	int Y = GAME_HEIGHT / 2;
-
-
 	//円の半径
 	int radius = 50;
+
+	//四角の位置　大きさ
+	//int x = 0;
+	//int y = 0;
+	
+	//int WidthB = 25;
+	//int HeightB = 25;
 
 	//最初のシーンはタイトル画面
 	GameScene == GAME_SCENE_TITLE;
@@ -124,9 +131,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		AllKeyUpdate();
 
 
+		//FPS値の更新
+		FPSUpdate();
 
 		//ESCキーで強制終了
 		if (KeyClick(KEY_INPUT_ESCAPE) == TRUE) { break; }
+
+
+		//DrawCircle(X, Y, radius, GetColor(255, 255, 0), TRUE); 円が一番下
 
 
 		//以前のシーンを所得
@@ -165,7 +177,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 		}
 
-		//キーを入力
+
+		
+		//キーを入力(円)
 		if (KeyDown(KEY_INPUT_UP) == TRUE)
 		{
 			Y--;	//上に移動
@@ -185,6 +199,13 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		}
 
 		DrawCircle(X, Y, radius, GetColor(255, 255, 0), TRUE);
+
+		//DrawBox(x, y, x + WidthB,y + HeightB, GetColor(0, 0, 255), TRUE);
+
+		//FPS値を描画
+		FPSDraw();
+		//FPS処理を待つ
+		FPSWait();
 
 		ScreenFlip();	//ダブルバッファリングした画面を描画
 	}
