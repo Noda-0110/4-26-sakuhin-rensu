@@ -60,7 +60,7 @@ VOID FPSDraw(VOID)
 {
 	if (GAME_DEBUG == TRUE) {
 		//•¶Žš—ñ‚ð•`‰æ
-		DrawFormatString(0,700, GetColor(0, 0, 0), "FPS:%.1f", fps.DrawValue);
+		DrawFormatString(5,700, GetColor(0, 0, 0), "FPS:%.1f", fps.DrawValue);
 	}
 	return;
 }

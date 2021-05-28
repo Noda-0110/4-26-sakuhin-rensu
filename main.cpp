@@ -75,6 +75,11 @@ VOID collUpdateplayer(CHARACTOR* chara);	//当たり判定の領域を更新
 
 VOID collUpdate(CHARACTOR* chara);	//当たり判定の領域を更新
 
+
+BOOL colltouch(RECT player, RECT goal);
+
+
+
 // プログラムは WinMain から始まります
 //Windowsのプログラミング法で動いている
 //DxLibは、DirectXという、ゲームプログラミングを簡単に扱える仕組み
@@ -136,8 +141,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	//画像の幅と高さを所得
 	GetGraphSize(player.handle, &player.width, &player.height);
 
-	//当たり判定を更新（関数）
-	collUpdateplayer(&player);
 
 	//プレイヤーの初期化
 	player.x = GAME_WIDTH / 2 - player.width / 2;
@@ -145,6 +148,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	player.speed = 500;
 	player.IsDraw = TRUE;
 
+
+	//当たり判定を更新（関数）
+	collUpdateplayer(&player);
 
 
 	//ゴールの画像を読み込み
@@ -167,15 +173,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	//画像の幅と高さを所得
 	GetGraphSize(Goal.handle, &Goal.width, &Goal.height);
 
-	//当たり判定を更新（関数）
-	collUpdate(&Goal);
-
 	//ゴールの初期化
 	Goal.x = GAME_WIDTH - Goal.width;
 	Goal.y = 0;
 	Goal.speed = 500;
 	Goal.IsDraw = TRUE;
 
+	//当たり判定を更新（関数）
+	collUpdate(&Goal);
 
 
 	//無限ループ　受け取り続ける
@@ -234,8 +239,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 				GameScene = GAME_SCENE_CHANGE;	//画面切り替えシーンに変える
 			}
 		}
-
-
 
 		//FPS値を描画
 		FPSDraw();
@@ -317,38 +320,39 @@ VOID Play(VOID)
 /// </summary>
 VOID PlayProc(VOID)
 {
-	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
-	{
-		//シーン切り替え
-		//次のシーンの初期化をここで行うと楽
-		//エンド画面に切り替え
-		ChangeScene(GAME_SCENE_END);
-	}
-
-
 	//プレイヤーの操作
-	if (KeyDown(KEY_INPUT_UP) == TRUE)
+	if (KeyDown(KEY_INPUT_W) == TRUE)
 	{
 		player.y -= player.speed * fps.DeltaTime;
 	}
 
-	if (KeyDown(KEY_INPUT_DOWN) == TRUE)
+	if (KeyDown(KEY_INPUT_S) == TRUE)
 	{
 		player.y += player.speed * fps.DeltaTime;
 	}
 
-	if (KeyDown(KEY_INPUT_LEFT) == TRUE)
+	if (KeyDown(KEY_INPUT_A) == TRUE)
 	{
 		player.x -= player.speed * fps.DeltaTime;
 	}
 
-	if (KeyDown(KEY_INPUT_RIGHT) == TRUE)
+	if (KeyDown(KEY_INPUT_D) == TRUE)
 	{
 		player.x += player.speed * fps.DeltaTime;
 	}
 
 	//当たり判定を更新
 	collUpdateplayer(&player);
+	//当たり判定を更新（関数）
+	collUpdate(&Goal);
+
+	//プレイヤーがゴールに当たった時
+	if (colltouch(player.coll, Goal.coll) == TRUE)
+	{
+		ChangeScene(GAME_SCENE_END);
+		return;
+	}
+
 
 	return;
 }
@@ -549,4 +553,21 @@ VOID collUpdate(CHARACTOR* chara)
 	chara->coll.bottom = chara->y + chara->height;
 
 	return;
+}
+
+BOOL colltouch(RECT p,RECT g)
+{
+	if (
+		p.left < g.right &&	//pの左辺x < gの右辺x座標
+		p.right > g.left &&	//pの右辺x < gの左辺x座標
+		p.bottom > g.top &&	//pの上辺y < gの下辺y座標
+		p.top < g.bottom	//pの下辺y < gの上辺y座標
+		)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
 }
