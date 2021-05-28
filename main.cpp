@@ -21,17 +21,32 @@ struct CHARACTOR
 	BOOL IsDraw = FALSE;//画像が描画できるか
 };
 
+//動画の構造体
+struct MOVIE
+{
+	int handle = -1;	//動画のハンドル
+	char path[255];		//動画のパス
+
+	int x;		//ｘ位置
+	int y;		//ｙ位置
+	int width;	//幅
+	int height;	//高さ
+
+	int Volume = 255;	//ボリューム（最小）0～255（最大）
+};
+
 //グローバル変数
 //シーンを管理する変数
 GAME_SCENE GameScene;		//現在のゲームのシーン
 GAME_SCENE OldGameScene;	//前回もゲームのシーン
 GAME_SCENE NextGameScene;	//次のゲームのシーン
-
+//プレイ背景の動画
+MOVIE playMovie;
 //プレイヤー
 CHARACTOR player;
-
 //ゴール
 CHARACTOR Goal;
+
 
 //画面の切り替え
 BOOL IsFadeOut = FALSE;	//フェードアウト
@@ -76,7 +91,7 @@ VOID collUpdateplayer(CHARACTOR* chara);	//当たり判定の領域を更新
 VOID collUpdate(CHARACTOR* chara);	//当たり判定の領域を更新
 
 
-BOOL colltouch(RECT player, RECT goal);
+BOOL colltouch(RECT player, RECT goal);//当たり判定の触れているか触れていないかの判定
 
 
 
@@ -121,6 +136,28 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	//ゲーム全体の初期化
 
+	//プレイ動画の背景を読み込み
+	strcpyDx(playMovie.path, ".\\Movie\\PlayForest.mp4");
+	playMovie.handle = LoadGraph(playMovie.path);	//動画を読み込み
+		//動画が読み込めなかったとき、エラー（ー１）が入る
+	if (playMovie.handle == -1)
+	{
+		MessageBox(
+			GetMainWindowHandle(),	//メインのウィンドウハンドル
+			playMovie.path,			//メッセージ本文
+			"動画読み込みエラー！",	//メッセージタイトル
+			MB_OK					//ボタン
+		);
+		DxLib_End();	//強制終了
+		return -1;		//エラー終了
+	}
+	//画像の幅と高さを所得
+	GetGraphSize(playMovie.handle, &playMovie.width, &playMovie.height);
+
+	//動画のボリューム
+	playMovie.Volume = 255;
+
+
 	//プレイヤーの画像を読み込み
 	strcpyDx(player.path, ".\\image\\Player2.png");
 	player.handle = LoadGraph(player.path);	//画像を読み込み
@@ -154,7 +191,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 
 	//ゴールの画像を読み込み
-	strcpyDx(Goal.path, ".\\image\\Goal.png");
+	strcpyDx(Goal.path, ".\\image\\Goal2.png");
 	Goal.handle = LoadGraph(Goal.path);	//画像を読み込み
 
 	//画像が読み込めなかったとき、エラー（ー１）が入る
@@ -249,6 +286,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	}
 
 	//終わる時の処理
+	DeleteGraph(playMovie.handle);	//メモリ上から動画を削除
 	DeleteGraph(player.handle);	//メモリ上から画像を削除
 	DeleteGraph(Goal.handle);	//メモリ上から画像を削除
 
@@ -362,6 +400,17 @@ VOID PlayProc(VOID)
 VOID PlayDraw(VOID)
 
 {
+	//プレイ動画を背景に描画
+	//もし動画が再生されていなければ
+	if (GetMovieStateToGraph(playMovie.handle) == 0)
+	{
+		//再生する
+		SeekMovieToGraph(playMovie.handle, 0);	//シークバーを最初に戻す
+		PlayMovieToGraph(playMovie.handle);		//動画を再生（描画はしていない）
+	}
+
+	//動画を描画(画像を画面に合わせて引き延ばす)
+	DrawExtendGraph(0, 0, GAME_WIDTH, GAME_HEIGHT, playMovie.handle, TRUE);
 	//ゴールを描画
 	if (Goal.IsDraw == TRUE)
 	{
@@ -533,10 +582,10 @@ VOID ChangeDraw(VOID)
 /// <param name="coll">当たり判定の領域</param>
 VOID collUpdateplayer(CHARACTOR* chara)
 {
-	chara->coll.left = chara->x + 35;		//当たり判定を微調整
-	chara->coll.top = chara->y + 30;		//当たり判定を微調整
-	chara->coll.right = chara->x + chara->width - 25;	//当たり判定を微調整
-	chara->coll.bottom = chara->y + chara->height - 30;	//当たり判定を微調整
+	chara->coll.left = chara->x + 30;		//当たり判定を微調整
+	chara->coll.top = chara->y + 25;		//当たり判定を微調整
+	chara->coll.right = chara->x + chara->width - 15;	//当たり判定を微調整
+	chara->coll.bottom = chara->y + chara->height - 20;	//当たり判定を微調整
 
 	return;
 }
