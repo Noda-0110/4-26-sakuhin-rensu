@@ -1,4 +1,4 @@
-
+//#CRT_SECURE_NO_WARNINGS
 //ヘッダファイル読み込み
 #include "game.h"		//ゲームを管理する為のヘッダファイル　あくまでもゲームの管理
 #include "keyboard.h"	//キーボードの処理
@@ -11,14 +11,12 @@ struct CHARACTOR
 {
 	int handle = -1;	//画像のハンドル（管理番号）
 	char path[255];		//画像の場所（パス）
+
 	int x;		//X位置
 	int y;		//Y位置
 	int width;	//幅
 	int height;	//高さ
 	int speed = 1;
-
-	int hspeed = 1;
-	int wspeed = 1;
 
 	RECT coll;	//上下左右当たり判定の領域 RECTは四角形の位置を扱える
 	BOOL IsDraw = FALSE;//画像が描画できるか
@@ -34,9 +32,19 @@ struct MOVIE
 	int y;		//ｙ位置
 	int width;	//幅
 	int height;	//高さ
-
 	int Volume = 255;	//ボリューム（最小）0～255（最大）
 };
+
+//音楽の構造体
+struct AUDIO
+{
+	int handle = -1;	//音楽のハンドル
+	char path[255];		//音楽のパス
+
+	int volume = -1;	//ボリューム（MIN 0　～　２５５　MAX）
+	int playType = -1;
+};
+
 
 //グローバル変数
 //シーンを管理する変数
@@ -49,6 +57,11 @@ MOVIE playMovie;
 CHARACTOR player;
 //ゴール
 CHARACTOR Goal;
+
+//音楽
+AUDIO TitleBGM;
+AUDIO PlayBGM;
+AUDIO EndBGM;
 
 
 //画面の切り替え
@@ -97,6 +110,7 @@ VOID collUpdate(CHARACTOR* chara);	//当たり判定の領域を更新
 BOOL colltouch(RECT player, RECT goal);//当たり判定の触れているか触れていないかの判定
 
 BOOL GameLoad(VOID);	//ゲームデータの読み込み
+BOOL LoadAudio(AUDIO* audio, const char* path, int volume, int playType);	//音楽の読み込み
 VOID GameInit(VOID);	//ゲームの初期化
 
 // プログラムは WinMain から始まります
@@ -221,6 +235,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	DeleteGraph(player.handle);	//メモリ上から画像を削除
 	DeleteGraph(Goal.handle);	//メモリ上から画像を削除
 
+	DeleteSoundMem(TitleBGM.handle);	//メモリ上から音楽を削除
+	DeleteSoundMem(PlayBGM.handle);	//メモリ上から音楽を削除
+	DeleteSoundMem(EndBGM.handle);	//メモリ上から音楽を削除
+
 	// ＤＸライブラリ使用の終了処理（準備）
 	DxLib_End();
 
@@ -249,7 +267,7 @@ BOOL GameLoad()
 		);
 		return FALSE;				//エラー終了
 	}
-	//画像の幅と高さを所得
+	//動画の幅と高さを所得
 	GetGraphSize(playMovie.handle, &playMovie.width, &playMovie.height);
 
 	//動画のボリューム
@@ -294,6 +312,12 @@ BOOL GameLoad()
 	//画像の幅と高さを所得
 	GetGraphSize(Goal.handle, &Goal.width, &Goal.height);
 
+	//音楽の読み込み
+	if (!LoadAudio(&TitleBGM, ".\\Audio\\タイトル.mp3", 255, DX_PLAYTYPE_LOOP)) { return FALSE; }
+	if (!LoadAudio(&PlayBGM, ".\\Audio\\プレイ.mp3", 255, DX_PLAYTYPE_LOOP)) { return FALSE; }
+	if (!LoadAudio(&EndBGM, ".\\Audio\\エンド.mp3", 255, DX_PLAYTYPE_LOOP)) { return FALSE; }
+
+
 	return TRUE;				//全て読み込めた
 }
 
@@ -320,6 +344,36 @@ VOID GameInit(VOID)
 	collUpdate(&Goal);
 }
 
+/// <summary>
+/// 音楽をメモリへと読み込む
+/// </summary>
+/// <param name="audio">Audio構造体のアドレス &～～～</param>
+/// <param name="path">Audioのパス　.\\Audio\\～～～</param>
+/// <param name="volume">ボリューム</param>
+/// <param name="playType">DX_PLAYTYPE_LOOP or DX_PLAYTYPE_BACK</param>
+/// <returns></returns>
+BOOL LoadAudio(AUDIO* audio, const char* path, int volume, int playType)
+{
+	strcpyDx(audio->path,path);
+	audio->handle = LoadSoundMem(audio->path);
+
+	//音楽を読み込みができなかった
+	if (audio->handle == -1)
+	{
+		MessageBox(
+			GetMainWindowHandle(),	//メインのウィンドウハンドル
+			audio->path,				//メッセージ本文
+			"音楽読み込みエラー！",	//メッセージタイトル
+			MB_OK					//ボタン
+		);
+		return FALSE;				//エラー終了
+	}
+
+	audio->playType = playType;
+	audio->volume = volume;
+
+	return TRUE;
+}
 
 // ------------  シーン関数　　------------ //
 VOID ChangeScene(GAME_SCENE scene)
@@ -349,14 +403,22 @@ VOID TitleProc(VOID)
 {
 	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
 	{
+		//BGMを止める
+		StopSoundMem(TitleBGM.handle);
 		//シーン切り替え
 		//次のシーンの初期化をここで行うと楽
 		//プレイ画面に切り替え
 		GameInit();
 
 		ChangeScene(GAME_SCENE_PLAY);
+
+		return;
 	}
 
+	if (CheckSoundMem(TitleBGM.handle) == 0)
+	{
+		PlaySoundMem(TitleBGM.handle, TitleBGM.playType);
+	}
 	return;
 }
 /// <summary>
@@ -412,11 +474,17 @@ VOID PlayProc(VOID)
 	//プレイヤーがゴールに当たった時
 	if (colltouch(player.coll, Goal.coll) == TRUE)
 	{
+		//BGMを止める
+		StopSoundMem(PlayBGM.handle);
+
 		ChangeScene(GAME_SCENE_END);
 		return;
 	}
 
-
+	if (CheckSoundMem(PlayBGM.handle) == 0)
+	{
+		PlaySoundMem(PlayBGM.handle, PlayBGM.playType);
+	}
 	return;
 }
 /// <summary>
@@ -484,12 +552,18 @@ VOID EndProc(VOID)
 {
 	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
 	{
+		//BGMを止める
+		StopSoundMem(EndBGM.handle);
 		//シーン切り替え
 		//次のシーンの初期化をここで行うと楽
 		//タイトル画面に切り替え
 		ChangeScene(GAME_SCENE_TITLE);
+		return;
 	}
-
+	if (CheckSoundMem(EndBGM.handle) == 0)
+	{
+		PlaySoundMem(EndBGM.handle, EndBGM.playType);
+	}
 	return;
 }
 /// <summary>
