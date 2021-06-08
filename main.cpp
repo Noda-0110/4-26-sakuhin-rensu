@@ -62,7 +62,7 @@ CHARACTOR Goal;
 AUDIO TitleBGM;
 AUDIO PlayBGM;
 AUDIO EndBGM;
-
+AUDIO MoobSE;
 
 //画面の切り替え
 BOOL IsFadeOut = FALSE;	//フェードアウト
@@ -238,6 +238,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	DeleteSoundMem(TitleBGM.handle);	//メモリ上から音楽を削除
 	DeleteSoundMem(PlayBGM.handle);	//メモリ上から音楽を削除
 	DeleteSoundMem(EndBGM.handle);	//メモリ上から音楽を削除
+	DeleteSoundMem(MoobSE.handle);	//メモリ上から音楽を削除
 
 	// ＤＸライブラリ使用の終了処理（準備）
 	DxLib_End();
@@ -316,6 +317,7 @@ BOOL GameLoad()
 	if (!LoadAudio(&TitleBGM, ".\\Audio\\タイトル.mp3", 255, DX_PLAYTYPE_LOOP)) { return FALSE; }
 	if (!LoadAudio(&PlayBGM, ".\\Audio\\プレイ.mp3", 255, DX_PLAYTYPE_LOOP)) { return FALSE; }
 	if (!LoadAudio(&EndBGM, ".\\Audio\\エンド.mp3", 255, DX_PLAYTYPE_LOOP)) { return FALSE; }
+	if (!LoadAudio(&MoobSE, ".\\Audio\\歩くSE.mp3", 255, DX_PLAYTYPE_BACK)) { return FALSE; }
 
 
 	return TRUE;				//全て読み込めた
@@ -449,21 +451,48 @@ VOID PlayProc(VOID)
 	if (KeyDown(KEY_INPUT_W) == TRUE)
 	{
 		player.y -= player.speed * fps.DeltaTime;
+
+
+		//動く時の効果音
+		if (CheckSoundMem(MoobSE.handle) == 0)
+		{
+			PlaySoundMem(MoobSE.handle, MoobSE.playType);
+		}
 	}
 
 	if (KeyDown(KEY_INPUT_S) == TRUE)
 	{
 		player.y += player.speed * fps.DeltaTime;
+
+		//動く時の効果音
+		if (CheckSoundMem(MoobSE.handle) == 0)
+		{
+			PlaySoundMem(MoobSE.handle, MoobSE.playType);
+		}
 	}
 
 	if (KeyDown(KEY_INPUT_A) == TRUE)
 	{
 		player.x -= player.speed * fps.DeltaTime;
+
+
+		//動く時の効果音
+		if (CheckSoundMem(MoobSE.handle) == 0)
+		{
+			PlaySoundMem(MoobSE.handle, MoobSE.playType);
+		}
 	}
 
 	if (KeyDown(KEY_INPUT_D) == TRUE)
 	{
 		player.x += player.speed * fps.DeltaTime;
+
+
+		//動く時の効果音
+		if (CheckSoundMem(MoobSE.handle) == 0)
+		{
+			PlaySoundMem(MoobSE.handle, MoobSE.playType);
+		}
 	}
 
 	//当たり判定を更新
