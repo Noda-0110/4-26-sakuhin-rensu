@@ -75,6 +75,7 @@ IMAGE EndLogo;
 AUDIO TitleBGM;
 AUDIO PlayBGM;
 AUDIO EndBGM;
+
 AUDIO MoobSE;
 
 //画面の切り替え
@@ -94,6 +95,10 @@ int FadeInCntInit = FadeTimeMax;	//初期値
 int FadeInCnt = FadeInCntInit;		//フェードインのカウンタ
 int FadeInCntMax = FadeTimeMax;				//フェードインのカウンタMAX
 
+//PushEnterの点滅
+int PushEnterCnt = 0;
+const int PushEnterCntMAX = 60;
+BOOL PushEnterBrink = FALSE;
 
 //プロトタイプ宣言
 VOID Title(VOID);		//タイトル画面
@@ -296,12 +301,12 @@ BOOL GameLoad()
 	GetGraphSize(Goal.img.handle, &Goal.img.width, &Goal.img.height);
 
 	//画像の読み込み
-	if (!LoadImageMem(&player.img,".\\image\\player2.png")) { return FALSE; }
-	if (!LoadImageMem(&player.img,".\\image\\Goal2.png")) { return FALSE; }
+	if (!LoadImageMem(&player.img,".\\image\\player2.\png")) { return FALSE; }
+	if (!LoadImageMem(&Goal.img,".\\image\\Goal2.\png")) { return FALSE; }
 
-	if (!LoadImageMem(&TitleLogo,".\\image\\タイトルロゴ.png")) { return FALSE; }
-	if (!LoadImageMem(&TitleEnter,".\\image\\PushEnter.png")) { return FALSE; }
-	if (!LoadImageMem(&EndLogo,".\\image\\クリアロゴ.png")) { return FALSE; }
+	if (!LoadImageMem(&TitleLogo,".\\image\\タイトルロゴ.\png")) { return FALSE; }
+	if (!LoadImageMem(&TitleEnter,".\\image\\PushEnter.\png")) { return FALSE; }
+	if (!LoadImageMem(&EndLogo,".\\image\\クリアロゴ.\png")) { return FALSE; }
 
 
 	//音楽の読み込み
@@ -364,6 +369,23 @@ VOID GameInit(VOID)
 
 	//当たり判定を更新（関数）
 	collUpdate(&Goal);
+
+	//タイトルロゴの位置を決める
+	TitleLogo.x = GAME_WIDTH / 2 - TitleLogo.width / 2;		//中央ぞろえ
+	TitleLogo.y = 100;
+
+	//PushEnterの位置を決める
+	TitleEnter.x = GAME_WIDTH / 2 - TitleEnter.width / 2;	//中央ぞろえ	
+	TitleEnter.y = 600;
+
+	//PushEnterの点滅
+	PushEnterCnt = 0;
+	PushEnterBrink = FALSE;
+
+	//クリアロゴの位置を決め
+	EndLogo.x = GAME_WIDTH / 2 - EndLogo.width / 2;
+	EndLogo.y = GAME_HEIGHT / 2 - EndLogo.height / 2;
+
 }
 
 /// <summary>
@@ -391,8 +413,8 @@ BOOL LoadAudio(AUDIO* audio, const char* path, int volume, int playType)
 		return FALSE;				//エラー終了
 	}
 
-	audio->playType = playType;
 	audio->volume = volume;
+	audio->playType = playType;
 
 	return TRUE;
 }
@@ -448,6 +470,44 @@ VOID TitleProc(VOID)
 /// </summary>
 VOID TitleDraw(VOID)
 {
+
+	//タイトルロゴの描画
+	DrawGraph(TitleLogo.x, TitleLogo.y, TitleLogo.handle, TRUE);
+
+	//MAX値まで待つ
+	if (PushEnterCnt < PushEnterCntMAX) { PushEnterCnt++; }
+	else
+	{
+		if (PushEnterBrink == TRUE)PushEnterBrink = FALSE;
+		else if (PushEnterBrink == FALSE)PushEnterBrink = TRUE;
+
+		PushEnterCnt = 0;	//カウンタを初期化
+	}
+
+	if (PushEnterBrink == TRUE)
+	{
+		//半透明にする
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((float)PushEnterCnt / PushEnterCntMAX) * 255);
+
+		//PushEnterの描画
+		DrawGraph(TitleEnter.x, TitleEnter.y, TitleEnter.handle, TRUE);
+
+		//半透明終了
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	}
+
+	if (PushEnterBrink == FALSE)
+	{
+		//半透明にする
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((float)(PushEnterCntMAX - PushEnterCnt) / PushEnterCntMAX) * 255);
+
+		//PushEnterの描画
+		DrawGraph(TitleEnter.x, TitleEnter.y, TitleEnter.handle, TRUE);
+
+		//半透明終了
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	}
+
 	DrawString(0, 0, "タイトル画面", GetColor(0, 0, 0));
 	return;
 }
@@ -467,6 +527,11 @@ VOID Play(VOID)
 /// </summary>
 VOID PlayProc(VOID)
 {
+	if (CheckSoundMem(PlayBGM.handle) == 0)
+	{
+		PlaySoundMem(PlayBGM.handle, PlayBGM.playType);
+	}
+
 	//プレイヤーの操作
 	if (KeyDown(KEY_INPUT_W) == TRUE)
 	{
@@ -528,11 +593,6 @@ VOID PlayProc(VOID)
 
 		ChangeScene(GAME_SCENE_END);
 		return;
-	}
-
-	if (CheckSoundMem(PlayBGM.handle) == 0)
-	{
-		PlaySoundMem(PlayBGM.handle, PlayBGM.playType);
 	}
 	return;
 }
@@ -620,6 +680,8 @@ VOID EndProc(VOID)
 /// </summary>
 VOID EndDraw(VOID)
 {
+	//EndLogoの描画
+	DrawGraph(EndLogo.x, EndLogo.y, EndLogo.handle, TRUE);
 	DrawString(0, 0, "エンド画面", GetColor(0, 0, 0));
 	return;
 }
