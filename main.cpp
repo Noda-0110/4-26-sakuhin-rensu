@@ -65,6 +65,8 @@ MOVIE playMovie;
 CHARACTOR player;
 //ゴール
 CHARACTOR Goal;
+//エネミー
+CHARACTOR enemy;
 
 //画像を読み込む
 IMAGE TitleLogo;
@@ -122,7 +124,9 @@ VOID ChangeScene(GAME_SCENE scene);	//シーン切り替え
 
 VOID collUpdateplayer(CHARACTOR* chara);	//当たり判定の領域を更新
 
-VOID collUpdate(CHARACTOR* chara);	//当たり判定の領域を更新
+VOID collUpdateGoal(CHARACTOR* chara);	//当たり判定の領域を更新
+
+VOID collUpdateenemy(CHARACTOR* chara);	//当たり判定の領域を更新
 
 
 BOOL colltouch(RECT player, RECT goal);//当たり判定の触れているか触れていないかの判定
@@ -252,6 +256,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	//終わる時の処理
 	DeleteGraph(playMovie.handle);	//メモリ上から動画を削除
 	DeleteGraph(player.img.handle);	//メモリ上から画像を削除
+	DeleteGraph(enemy.img.handle);	//メモリ上から画像を削除
+
 	DeleteGraph(Goal.img.handle);	//メモリ上から画像を削除
 
 	DeleteSoundMem(TitleBGM.handle);	//メモリ上から音楽を削除
@@ -301,8 +307,9 @@ BOOL GameLoad()
 	GetGraphSize(Goal.img.handle, &Goal.img.width, &Goal.img.height);
 
 	//画像の読み込み
-	if (!LoadImageMem(&player.img,".\\image\\player2.\png")) { return FALSE; }
-	if (!LoadImageMem(&Goal.img,".\\image\\Goal2.\png")) { return FALSE; }
+	if (!LoadImageMem(&player.img,".\\image\\player.\png")) { return FALSE; }		//プレイヤー
+	if (!LoadImageMem(&Goal.img,".\\image\\Goal.\png")) { return FALSE; }			//ゴール
+	if (!LoadImageMem(&enemy.img,".\\image\\enemy_bee.\png")) { return FALSE; }	//エネミー
 
 	if (!LoadImageMem(&TitleLogo,".\\image\\タイトルロゴ.\png")) { return FALSE; }
 	if (!LoadImageMem(&TitleEnter,".\\image\\PushEnter.\png")) { return FALSE; }
@@ -353,13 +360,14 @@ BOOL LoadImageMem(IMAGE* image, const char* path)
 VOID GameInit(VOID)
 {
 	//プレイヤーの初期化
-	player.img.x = GAME_WIDTH / 2 - player.img.width / 2;
+	player.img.x = 0;
 	player.img.y = GAME_HEIGHT / 2 - player.img.height / 2;
 	player.speed = 500;
 	player.img.IsDraw = TRUE;
 
 	//当たり判定を更新（関数）
 	collUpdateplayer(&player);
+
 
 	//ゴールの初期化
 	Goal.img.x = GAME_WIDTH - Goal.img.width;
@@ -368,7 +376,17 @@ VOID GameInit(VOID)
 	Goal.img.IsDraw = TRUE;
 
 	//当たり判定を更新（関数）
-	collUpdate(&Goal);
+	collUpdateGoal(&Goal);
+
+
+	//エネミーの初期化
+	enemy.img.x = GAME_WIDTH / 2 - enemy.img.width / 2;
+	enemy.img.y = GAME_HEIGHT / 2 - enemy.img.height / 2;
+	enemy.speed = 500;
+	enemy.img.IsDraw = TRUE;
+	//当たり判定の更新(関数)
+	collUpdateenemy(&enemy);
+
 
 	//タイトルロゴの位置を決める
 	TitleLogo.x = GAME_WIDTH / 2 - TitleLogo.width / 2;		//中央ぞろえ
@@ -580,13 +598,40 @@ VOID PlayProc(VOID)
 		}
 	}
 
+	//敵の動き
+	if (enemy.img.y - enemy.img.height < 0 || enemy.img.y - enemy.img.height > GAME_HEIGHT)
+	{
+		enemy.speed = -enemy.speed;
+
+		enemy.img.y += enemy.speed * fps.DeltaTime;
+	}
+	if (enemy.img.y - enemy.img.height > 0 || enemy.img.y - enemy.img.height < GAME_HEIGHT)
+	{
+		enemy.speed = -enemy.speed;
+
+		enemy.img.y += enemy.speed * fps.DeltaTime;
+	}
+
+
+
 	//当たり判定を更新
 	collUpdateplayer(&player);
-	//当たり判定を更新（関数）
-	collUpdate(&Goal);
+	//当たり判定を更新
+	collUpdateGoal(&Goal);
+	//当たり判定を更新
+	collUpdateenemy(&enemy);
 
 	//プレイヤーがゴールに当たった時
 	if (colltouch(player.coll, Goal.coll) == TRUE)
+	{
+		//BGMを止める
+		StopSoundMem(PlayBGM.handle);
+
+		ChangeScene(GAME_SCENE_END);
+		return;
+	}
+	//プレイヤーが敵に当たった時
+	if (colltouch(player.coll, enemy.coll) == TRUE)
 	{
 		//BGMを止める
 		StopSoundMem(PlayBGM.handle);
@@ -640,6 +685,21 @@ VOID PlayDraw(VOID)
 			DrawBox(player.coll.left, player.coll.top, player.coll.right, player.coll.bottom, GetColor(255, 0, 0), FALSE);
 		}
 	}
+
+	//敵を描画
+	if (enemy.img.IsDraw == TRUE)
+	{
+		DrawGraph(enemy.img.x, enemy.img.y, enemy.img.handle, TRUE);
+
+
+		//デバックの時は、当たり判定の領域を描画
+		if (GAME_DEBUG == TRUE)
+		{
+			//四角を描画
+			DrawBox(enemy.coll.left, enemy.coll.top, enemy.coll.right, enemy.coll.bottom, GetColor(255, 0, 0), FALSE);
+		}
+	}
+
 	DrawString(0, 0, "プレイ画面", GetColor(0, 0, 0));
 	return;
 }
@@ -804,7 +864,7 @@ VOID collUpdateplayer(CHARACTOR* chara)
 /// 当たり判定の更新(ゴール用)
 /// </summary>
 /// <param name="coll">当たり判定の領域</param>
-VOID collUpdate(CHARACTOR* chara)
+VOID collUpdateGoal(CHARACTOR* chara)
 {
 	chara->coll.left = chara->img.x;
 	chara->coll.top = chara->img.y;
@@ -813,6 +873,21 @@ VOID collUpdate(CHARACTOR* chara)
 
 	return;
 }
+
+/// <summary>
+/// 当たり判定の更新(敵用)
+/// </summary>
+/// <param name="coll">当たり判定の領域</param>
+VOID collUpdateenemy(CHARACTOR* chara)
+{
+	chara->coll.left = chara->img.x;
+	chara->coll.top = chara->img.y;
+	chara->coll.right = chara->img.x + chara->img.width;
+	chara->coll.bottom = chara->img.y + chara->img.height;
+
+	return;
+}
+
 
 BOOL colltouch(RECT p,RECT g)
 {
