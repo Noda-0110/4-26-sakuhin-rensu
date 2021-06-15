@@ -382,7 +382,7 @@ VOID GameInit(VOID)
 	//エネミーの初期化
 	enemy.img.x = GAME_WIDTH / 2 - enemy.img.width / 2;
 	enemy.img.y = GAME_HEIGHT / 2 - enemy.img.height / 2;
-	enemy.speed = 500;
+	enemy.speed = 100;
 	enemy.img.IsDraw = TRUE;
 	//当たり判定の更新(関数)
 	collUpdateenemy(&enemy);
@@ -598,18 +598,11 @@ VOID PlayProc(VOID)
 		}
 	}
 
+	enemy.img.y += enemy.speed * fps.DeltaTime;
 	//敵の動き
-	if (enemy.img.y - enemy.img.height < 0 || enemy.img.y - enemy.img.height > GAME_HEIGHT)
+	if (enemy.img.y <= 0 || enemy.img.y + enemy.img.height >= GAME_HEIGHT)
 	{
 		enemy.speed = -enemy.speed;
-
-		enemy.img.y += enemy.speed * fps.DeltaTime;
-	}
-	if (enemy.img.y - enemy.img.height > 0 || enemy.img.y - enemy.img.height < GAME_HEIGHT)
-	{
-		enemy.speed = -enemy.speed;
-
-		enemy.img.y += enemy.speed * fps.DeltaTime;
 	}
 
 

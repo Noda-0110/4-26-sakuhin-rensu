@@ -26,16 +26,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="game.ico">
-      <Filter>リソース ファイル</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Resouce.rc">
-      <Filter>リソース ファイル</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="keyboard.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -45,5 +35,15 @@
     <ClInclude Include="game.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="アイコン.ico">
+      <Filter>リソース ファイル</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource.rc">
+      <Filter>リソース ファイル</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
